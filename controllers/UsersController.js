@@ -32,7 +32,7 @@ const getMe = async (req, resp) => {
   if (!userId) {
     return resp.status(401).json({ error: 'Unauthorized' });
   }
-  const user = await dbClient.db.collection('users').findOne({ _id: new dbClient.ObjectId(userId) });
+  const user = await dbClient.db.collection('users').findOne({ _id: userId });
   if (!user) {
     return resp.status(401).json({ error: 'Unauthorized' });
   }
