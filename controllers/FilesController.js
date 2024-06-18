@@ -39,7 +39,7 @@ const postUpload = async (req, resp) => {
       if (!parent) return resp.status(400).json({ error: 'Parent not found' });
       if (parent.type !== 'folder') return resp.status(400).json({ error: 'Parent is not a folder' });
     }
-
+    
     const fileData = {
       userId: user._id,
       name,
@@ -50,7 +50,7 @@ const postUpload = async (req, resp) => {
 
     if (type === 'folder') {
       const result = await dbClient.db.collection('files').insertOne(fileData);
-      return resp.status(201).json({ id: result.insertedId, ...fileData });
+      return resp.status(201).json(result);
     }
     const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
     await fs.mkdir(folderPath, { recursive: true });
