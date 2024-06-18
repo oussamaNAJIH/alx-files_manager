@@ -27,7 +27,7 @@ const getConnect = async (req, resp) => {
 
     const token = uuidv4();
     const key = `auth_${token}`;
-    await redisClient.set(key, foundUser._id.toString(), 'EX', 24 * 60 * 60);
+    await redisClient.set(key, foundUser._id.toString(), 24 * 60 * 60);
 
     return resp.status(200).json({ token });
   } catch (err) {
