@@ -58,7 +58,7 @@ const postUpload = async (req, resp) => {
     }
 
     const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
-    if (!fs.existsSync(folderPath)) await fs.mkdir(folderPath, { recursive: true });
+    await fs.mkdir(folderPath, { recursive: true });
     const localPath = path.resolve(folderPath, uuidv4());
 
     try {
