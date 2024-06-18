@@ -59,9 +59,10 @@ const postUpload = async (req, resp) => {
 
     const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
     await fs.mkdir(folderPath, { recursive: true });
-    const localPath = path.join(folderPath, uuidv4());
+    const localPath = path.resolve(folderPath, uuidv4());
 
     try {
+      // Decode Base64 and write the binary data to the file
       await fs.writeFile(localPath, Buffer.from(data, 'base64'));
     } catch (err) {
       console.error('Error writing file:', err);
