@@ -138,11 +138,95 @@ const getIndex = async (req, resp) => {
       { $limit: limit },
     ]).toArray();
 
-    return resp.json(files);
+    return resp.status(200).json(files);
   } catch (err) {
     console.error('Error retrieving files:', err);
     return resp.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
-module.exports = { postUpload, getShow, getIndex };
+const putPublish = async (req, resp) => {
+  const fileId = req.params.id;
+  const token = req.headers['x-token'];
+
+  if (!token) {
+    return resp.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const userId = await redisClient.get(`auth_${token}`);
+    if (!userId) {
+      return resp.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const file = await dbClient.db.collection('files').findOne({
+      _id: new ObjectId(fileId),
+      userId: new ObjectId(userId),
+    });
+
+    if (!file) {
+      return resp.status(404).json({ error: 'Not found' });
+    }
+
+    await dbClient.db.collection('files').updateOne(
+      { _id: new ObjectId(fileId) },
+      { $set: { isPublic: true } },
+    );
+
+    // Retrieve the updated file document
+    const updatedFile = await dbClient.db.collection('files').findOne({
+      _id: new ObjectId(fileId),
+      userId: new ObjectId(userId),
+    });
+
+    return resp.status(200).json(updatedFile);
+  } catch (err) {
+    console.error('Error updating file to public:', err);
+    return resp.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+const putUnpublish = async (req, resp) => {
+  const fileId = req.params.id;
+  const token = req.headers['x-token'];
+
+  if (!token) {
+    return resp.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const userId = await redisClient.get(`auth_${token}`);
+    if (!userId) {
+      return resp.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const file = await dbClient.db.collection('files').findOne({
+      _id: new ObjectId(fileId),
+      userId: new ObjectId(userId),
+    });
+
+    if (!file) {
+      return resp.status(404).json({ error: 'Not found' });
+    }
+
+    await dbClient.db.collection('files').updateOne(
+      { _id: new ObjectId(fileId) },
+      { $set: { isPublic: false } },
+    );
+
+    // Retrieve the updated file document
+    const updatedFile = await dbClient.db.collection('files').findOne({
+      _id: new ObjectId(fileId),
+      userId: new ObjectId(userId),
+    });
+
+    return resp.status(200).json(updatedFile);
+  } catch (err) {
+    console.error('Error updating file to private:', err);
+    return resp.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+module.exports = {
+  postUpload, getShow, getIndex, putPublish, putUnpublish,
+};
