@@ -136,9 +136,22 @@ const getIndex = async (req, resp) => {
       },
       { $skip: skip },
       { $limit: limit },
-    ]).toArray();
+    ]);
 
-    return resp.status(200).json(files);
+    const filesArray = [];
+    await files.forEach((item) => {
+      const fileItem = {
+        id: item._id,
+        userId: item.userId,
+        name: item.name,
+        type: item.type,
+        isPublic: item.isPublic,
+        parentId: item.parentId,
+      };
+      filesArray.push(fileItem);
+    });
+
+    return resp.send(filesArray);
   } catch (err) {
     console.error('Error retrieving files:', err);
     return resp.status(500).json({ error: 'Internal Server Error' });
