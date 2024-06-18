@@ -26,6 +26,7 @@ const postUpload = async (req, resp) => {
       name, type, parentId = '0', isPublic = false, data,
     } = req.body;
 
+    // Validation
     if (!name) return resp.status(400).json({ error: 'Missing name' });
     if (!type || !['folder', 'file', 'image'].includes(type)) {
       return resp.status(400).json({ error: 'Missing type' });
@@ -39,7 +40,7 @@ const postUpload = async (req, resp) => {
       if (!parent) return resp.status(400).json({ error: 'Parent not found' });
       if (parent.type !== 'folder') return resp.status(400).json({ error: 'Parent is not a folder' });
     }
-    
+
     const fileData = {
       userId: user._id,
       name,
@@ -50,16 +51,29 @@ const postUpload = async (req, resp) => {
 
     if (type === 'folder') {
       const result = await dbClient.db.collection('files').insertOne(fileData);
-      return resp.status(201).json({ id: result.insertedId, ...fileData });
+      return resp.status(201).json({
+        id: result.insertedId,
+        ...fileData,
+      });
     }
+
     const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
     await fs.mkdir(folderPath, { recursive: true });
     const localPath = path.join(folderPath, uuidv4());
-    await fs.writeFile(localPath, Buffer.from(data, 'base64').toString('utf8'));
+
+    try {
+      await fs.writeFile(localPath, Buffer.from(data, 'base64'));
+    } catch (err) {
+      console.error('Error writing file:', err);
+      return resp.status(500).json({ error: 'Error writing file to disk' });
+    }
 
     fileData.localPath = localPath;
     const result = await dbClient.db.collection('files').insertOne(fileData);
-    return resp.status(201).json({ id: result.insertedId, ...fileData });
+    return resp.status(201).json({
+      id: result.insertedId,
+      ...fileData,
+    });
   } catch (err) {
     console.error('Error creating file:', err);
     return resp.status(500).json({ error: 'Internal Server Error' });
