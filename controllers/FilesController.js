@@ -50,7 +50,7 @@ const postUpload = async (req, resp) => {
 
     if (type === 'folder') {
       const result = await dbClient.db.collection('files').insertOne(fileData);
-      return resp.status(201).json(result);
+      return resp.status(201).json({ id: result.insertedId, ...fileData });
     }
     const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
     await fs.mkdir(folderPath, { recursive: true });
@@ -59,7 +59,7 @@ const postUpload = async (req, resp) => {
 
     fileData.localPath = localPath;
     const result = await dbClient.db.collection('files').insertOne(fileData);
-    return resp.status(201).json(result);
+    return resp.status(201).json({ id: result.insertedId, ...fileData });
   } catch (err) {
     console.error('Error creating file:', err);
     return resp.status(500).json({ error: 'Internal Server Error' });
