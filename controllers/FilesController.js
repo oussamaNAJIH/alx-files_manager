@@ -59,7 +59,7 @@ const postUpload = async (req, resp) => {
 
     fileData.localPath = localPath;
     const result = await dbClient.db.collection('files').insertOne(fileData);
-    return resp.status(201).json({ id: result.insertedId, ...fileData });
+    return resp.status(201).json(result);
   } catch (err) {
     console.error('Error creating file:', err);
     return resp.status(500).json({ error: 'Internal Server Error' });
