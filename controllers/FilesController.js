@@ -42,7 +42,7 @@ const postUpload = async (req, resp) => {
     }
 
     const fileData = {
-      userId: user._id,
+      userId: new ObjectId(user._id),
       name,
       type,
       isPublic,
@@ -95,7 +95,10 @@ const getShow = async (req, resp) => {
       return resp.status(401).json({ error: 'Unauthorized' });
     }
 
-    const file = await dbClient.db.collection('files').findOne({ _id: new ObjectId(fileId), userId: new ObjectId(userId) });
+    const file = await dbClient.db.collection('files').findOne({
+      _id: new ObjectId(fileId),
+      userId: new ObjectId(userId),
+    });
     if (!file) {
       return resp.status(404).json({ error: 'Not found' });
     }
@@ -125,7 +128,12 @@ const getIndex = async (req, resp) => {
     const skip = page * limit;
 
     const files = await dbClient.db.collection('files').aggregate([
-      { $match: { userId: new ObjectId(userId), parentId: parentId === '0' ? '0' : new ObjectId(parentId) } },
+      {
+        $match: {
+          userId: new ObjectId(userId),
+          parentId: parentId === '0' ? '0' : new ObjectId(parentId),
+        },
+      },
       { $skip: skip },
       { $limit: limit },
     ]).toArray();
