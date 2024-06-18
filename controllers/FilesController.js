@@ -55,7 +55,7 @@ const postUpload = async (req, resp) => {
     const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
     await fs.mkdir(folderPath, { recursive: true });
     const localPath = path.join(folderPath, uuidv4());
-    await fs.writeFile(localPath, Buffer.from(data, 'base64'));
+    await fs.writeFile(localPath, Buffer.from(data, 'base64').toString('utf8'));
 
     fileData.localPath = localPath;
     const result = await dbClient.db.collection('files').insertOne(fileData);
