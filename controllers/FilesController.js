@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs').promises;
 const path = require('path');
+const mime = require('mime-types');
 const { ObjectId } = require('mongodb');
 const dbClient = require('../utils/db');
 const redisClient = require('../utils/redis');
@@ -240,6 +241,56 @@ const putUnpublish = async (req, resp) => {
   }
 };
 
+const getFile = async (req, resp) => {
+  const fileId = req.params.id;
+  const token = req.headers['x-token'];
+
+  try {
+    // Retrieve the file document
+    const file = await dbClient.db.collection('files').findOne({ _id: new ObjectId(fileId) });
+    if (!file) {
+      return resp.status(404).json({ error: 'Not found' });
+    }
+
+    // If the file is not public and there's no valid token or user, return 404
+    if (!file.isPublic) {
+      if (!token) {
+        return resp.status(404).json({ error: 'Not found' });
+      }
+      const userId = await redisClient.get(`auth_${token}`);
+      if (!userId || userId !== file.userId.toString()) {
+        return resp.status(404).json({ error: 'Not found' });
+      }
+    }
+
+    // If the file type is a folder, return 400
+    if (file.type === 'folder') {
+      return resp.status(400).json({ error: "A folder doesn't have content" });
+    }
+
+    // Check if the file exists on the local filesystem
+    const filePath = file.localPath;
+    try {
+      await fs.access(filePath);
+    } catch (err) {
+      return resp.status(404).json({ error: 'Not found' });
+    }
+
+    // Determine the MIME type based on the file name
+    const mimeType = mime.lookup(file.name) || 'application/octet-stream';
+
+    // Read the file content
+    const content = await fs.readFile(filePath);
+
+    // Set the appropriate content type and send the file content
+    resp.setHeader('Content-Type', mimeType);
+    return resp.send(content);
+  } catch (err) {
+    console.error('Error retrieving file content:', err);
+    return resp.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 module.exports = {
-  postUpload, getShow, getIndex, putPublish, putUnpublish,
+  postUpload, getShow, getIndex, putPublish, putUnpublish, getFile,
 };
